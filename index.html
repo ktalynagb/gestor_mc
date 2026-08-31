@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gestor de tareas · MC</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:ital,wght@0,700;0,800;1,700;1,800&family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --black:#121212;
+    --surface:#1C1C1C;
+    --surface-2:#242424;
+    --surface-3:#2C2C2C;
+    --lime:#C8FF00;
+    --lime-dark:#A8D800;
+    --lime-dim:rgba(200,255,0,0.1);
+    --white:#FFFFFF;
+    --gray:#AAAAAA;
+    --gray-dark:#666666;
+    --line:#2E2E2E;
+    --red:#FF4040;
+    --red-dim:rgba(255,64,64,0.1);
+    --amber:#FFB800;
+    --amber-dim:rgba(255,184,0,0.1);
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    font-family:'Barlow',sans-serif;
+    background:var(--black);
+    color:var(--white);
+    min-height:100vh;
+    background-image:radial-gradient(circle at 1px 1px,rgba(255,255,255,0.04) 1px,transparent 0);
+    background-size:28px 28px;
+  }
+  .mono{font-family:'JetBrains Mono',monospace;}
+  .condensed{font-family:'Barlow Condensed',sans-serif;}
+  .app{max-width:1140px;margin:0 auto;padding:32px 24px 64px;}
+
+  /* ---------- topbar ---------- */
+  .topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:14px;}
+  .brand{display:flex;align-items:center;gap:12px;}
+  .brand-mark{
+    width:40px;height:40px;border-radius:10px;
+    background:var(--lime);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'Barlow Condensed',sans-serif;font-size:18px;font-weight:800;
+    font-style:italic;color:var(--black);letter-spacing:-0.5px;flex-shrink:0;
+  }
+  .brand-name{
+    font-family:'Barlow Condensed',sans-serif;font-weight:800;font-style:italic;
+    font-size:22px;letter-spacing:0.3px;color:var(--white);line-height:1;
+  }
+  .brand-name span{color:var(--lime);}
+  .brand-sub{font-size:10.5px;color:var(--gray);font-family:'JetBrains Mono',monospace;margin-top:2px;letter-spacing:0.6px;text-transform:uppercase;}
+
+  .nav-tabs{display:flex;gap:4px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:4px;}
+  .nav-tab{
+    border:none;background:transparent;padding:8px 18px;border-radius:999px;
+    font-family:'Barlow',sans-serif;font-weight:700;font-size:13.5px;color:var(--gray);
+    cursor:pointer;transition:all .15s ease;
+  }
+  .nav-tab.active{background:var(--lime);color:var(--black);}
+  .nav-tab:hover:not(.active){background:var(--surface-2);color:var(--white);}
+
+  .btn-new{
+    display:flex;align-items:center;gap:6px;
+    background:var(--lime);color:var(--black);border:none;border-radius:10px;
+    padding:10px 18px;font-family:'Barlow',sans-serif;font-weight:700;font-size:14px;
+    cursor:pointer;transition:transform .12s ease, background .15s ease;
+  }
+  .btn-new:hover{background:var(--lime-dark);transform:translateY(-1px);}
+
+  /* ---------- screens ---------- */
+  .screen{display:none;}
+  .screen.active{display:block;}
+
+  /* ---------- welcome ---------- */
+  #screen-welcome.active{display:flex;justify-content:center;align-items:center;min-height:70vh;}
+  .welcome-card{
+    background:var(--surface);border:1px solid var(--line);border-radius:24px;
+    padding:52px 48px;max-width:520px;width:100%;text-align:center;
+    position:relative;overflow:hidden;
+  }
+  .welcome-card::before{
+    content:"mc";position:absolute;top:-20px;right:-30px;
+    font-family:'Barlow Condensed',sans-serif;font-size:200px;font-weight:800;
+    font-style:italic;color:rgba(200,255,0,0.04);line-height:1;pointer-events:none;
+    user-select:none;
+  }
+  .welcome-eyebrow{
+    font-family:'JetBrains Mono',monospace;font-size:11px;letter-spacing:2.5px;
+    text-transform:uppercase;color:var(--lime);margin-bottom:14px;position:relative;
+  }
+  .welcome-title{
+    font-family:'Barlow Condensed',sans-serif;font-weight:800;font-style:italic;
+    font-size:34px;line-height:1.1;margin:0 0 10px;position:relative;color:var(--white);
+  }
+  .welcome-title span{color:var(--lime);}
+  .welcome-desc{font-size:15px;color:var(--gray);margin:0 0 34px;position:relative;line-height:1.5;}
+  .ask-box{
+    background:var(--surface-2);border:1px solid var(--line);border-radius:16px;padding:26px 24px;
+  }
+  .ask-question{font-size:15.5px;font-weight:700;margin:0 0 18px;color:var(--white);}
+  .ask-actions{display:flex;gap:12px;justify-content:center;}
+  .ask-btn{
+    flex:1;padding:12px 0;border-radius:10px;border:1.5px solid transparent;
+    font-family:'Barlow',sans-serif;font-weight:700;font-size:14.5px;cursor:pointer;
+    transition:all .15s ease;
+  }
+  .ask-btn.yes{background:var(--lime);color:var(--black);}
+  .ask-btn.yes:hover{background:var(--lime-dark);}
+  .ask-btn.no{background:transparent;color:var(--white);border-color:var(--line);}
+  .ask-btn.no:hover{border-color:var(--lime);color:var(--lime);}
+
+  /* ---------- form ---------- */
+  #screen-form.active{display:flex;justify-content:center;}
+  .form-card{
+    background:var(--surface);border:1px solid var(--line);border-radius:20px;
+    padding:36px 40px;max-width:540px;width:100%;
+  }
+  .form-title{
+    font-family:'Barlow Condensed',sans-serif;font-weight:800;font-style:italic;
+    font-size:26px;margin:0 0 4px;color:var(--white);
+  }
+  .form-sub{font-size:13.5px;color:var(--gray);margin:0 0 28px;}
+  .field{margin-bottom:22px;}
+  .field label{
+    display:block;font-size:11.5px;font-weight:700;color:var(--lime);
+    text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px;
+  }
+  .field input[type=text],.field input[type=date],.field textarea{
+    width:100%;padding:11px 14px;border-radius:10px;border:1.5px solid var(--line);
+    font-family:'JetBrains Mono',monospace;font-size:13.5px;color:var(--white);
+    background:var(--surface-2);outline:none;transition:border-color .15s ease;
+  }
+  .field textarea{resize:vertical;min-height:80px;font-family:'Barlow',sans-serif;font-size:14px;line-height:1.5;}
+  .field input:focus,.field textarea:focus{border-color:var(--lime);}
+  .field input[type=date]::-webkit-calendar-picker-indicator{filter:invert(1);}
+  .err{color:#FF6B6B;font-size:12px;margin-top:6px;display:none;font-family:'JetBrains Mono',monospace;}
+  .type-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+  .type-chip{
+    border:1.5px solid var(--line);border-radius:10px;padding:11px 12px;cursor:pointer;
+    display:flex;align-items:center;gap:9px;transition:all .13s ease;background:var(--surface-2);
+  }
+  .type-chip .dot{width:10px;height:10px;border-radius:50%;flex-shrink:0;}
+  .type-chip span{font-size:13px;font-weight:600;color:var(--gray);}
+  .type-chip.selected{border-color:var(--chip-color);background:var(--chip-bg);}
+  .type-chip.selected span{color:var(--white);}
+
+  .file-drop{
+    border:1.5px dashed var(--line);border-radius:10px;padding:16px;text-align:center;
+    cursor:pointer;transition:border-color .15s ease;background:var(--surface-2);
+  }
+  .file-drop:hover{border-color:var(--lime);}
+  .file-drop-text{font-size:13px;color:var(--gray);}
+  .file-chip{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    background:var(--surface-2);border:1px solid var(--line);border-radius:10px;
+    padding:10px 12px;margin-top:10px;
+  }
+  .file-chip-name{font-family:'JetBrains Mono',monospace;font-size:12px;color:var(--lime);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .file-chip button{background:none;border:none;color:var(--gray);cursor:pointer;font-size:13px;font-weight:700;flex-shrink:0;}
+  .file-chip button:hover{color:var(--red);}
+
+  .form-actions{display:flex;gap:12px;margin-top:32px;}
+  .btn-primary{
+    flex:1;padding:12px 0;border-radius:10px;border:none;
+    background:var(--lime);color:var(--black);
+    font-family:'Barlow',sans-serif;font-weight:700;font-size:14.5px;cursor:pointer;
+  }
+  .btn-primary:hover{background:var(--lime-dark);}
+  .btn-ghost{
+    padding:12px 20px;border-radius:10px;border:1.5px solid var(--line);
+    background:transparent;color:var(--gray);
+    font-family:'Barlow',sans-serif;font-weight:700;font-size:14.5px;cursor:pointer;
+  }
+  .btn-ghost:hover{border-color:var(--lime);color:var(--lime);}
+  .btn-danger-ghost{
+    padding:12px 18px;border-radius:10px;border:1.5px solid rgba(255,64,64,0.4);
+    background:transparent;color:var(--red);
+    font-family:'Barlow',sans-serif;font-weight:700;font-size:14.5px;cursor:pointer;
+  }
+  .btn-danger-ghost:hover{background:rgba(255,64,64,0.08);}
+
+  /* ---------- board sub + search ---------- */
+  .board-sub{display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:10px;}
+  .legend{display:flex;gap:14px;flex-wrap:wrap;}
+  .legend-item{display:flex;align-items:center;gap:6px;font-size:12px;color:var(--gray);font-family:'JetBrains Mono',monospace;}
+  .legend-dot{width:8px;height:8px;border-radius:50%;}
+  .search-wrap{position:relative;flex:1;max-width:260px;}
+  .search-input{
+    width:100%;padding:8px 14px 8px 34px;border-radius:999px;
+    border:1.5px solid var(--line);background:var(--surface);
+    font-family:'Barlow',sans-serif;font-size:13.5px;color:var(--white);
+    outline:none;transition:border-color .15s ease;
+  }
+  .search-input:focus{border-color:var(--lime);}
+  .search-input::placeholder{color:var(--gray-dark);}
+  .search-icon{position:absolute;left:11px;top:50%;transform:translateY(-50%);color:var(--gray-dark);font-size:13px;pointer-events:none;line-height:1;}
+
+  /* ---------- columns ---------- */
+  .columns{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;}
+  .column{background:rgba(255,255,255,0.02);border:1px solid var(--line);border-radius:16px;padding:14px;min-height:200px;}
+  .column-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;padding:0 4px;}
+  .column-title{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-style:italic;font-size:14px;text-transform:uppercase;letter-spacing:0.8px;color:var(--white);}
+  .column-count{font-family:'JetBrains Mono',monospace;font-size:11px;background:var(--surface-3);color:var(--gray);border-radius:999px;padding:2px 9px;}
+  .cards{display:flex;flex-direction:column;gap:10px;}
+  .empty-col{font-size:12px;color:var(--gray-dark);text-align:center;padding:20px 6px;font-family:'JetBrains Mono',monospace;}
+
+  /* ---------- task card ---------- */
+  .task-card{
+    background:var(--surface);border:1px solid var(--line);border-radius:12px;
+    padding:13px 14px;border-left:4px solid var(--chip-color);cursor:pointer;
+    transition:border-color .12s ease, background .12s ease;
+  }
+  .task-card:hover{background:var(--surface-2);}
+  .task-card.t-overdue{background:rgba(255,64,64,0.06);border-color:rgba(255,64,64,0.2);}
+  .task-card.t-today{background:rgba(255,184,0,0.06);border-color:rgba(255,184,0,0.2);}
+  .task-card.t-soon{background:rgba(255,220,0,0.04);}
+  .task-card.t-done{opacity:0.45;}
+  .task-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;margin-bottom:6px;}
+  .task-name{font-size:14px;font-weight:700;line-height:1.35;color:var(--white);}
+  .task-del{background:none;border:none;color:var(--gray-dark);cursor:pointer;font-size:15px;line-height:1;padding:2px;flex-shrink:0;}
+  .task-del:hover{color:var(--red);}
+  .task-desc{font-size:12.5px;color:var(--gray);line-height:1.4;margin:0 0 9px;overflow:hidden;text-overflow:ellipsis;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;}
+  .task-meta{display:flex;align-items:center;justify-content:space-between;gap:8px;flex-wrap:wrap;}
+  .task-type-pill{font-size:10px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--chip-bg);color:var(--chip-color);}
+  .task-date{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gray);display:flex;align-items:center;gap:5px;}
+  .task-move{display:flex;gap:6px;margin-top:10px;}
+  .move-btn{
+    flex:1;font-family:'JetBrains Mono',monospace;font-size:11px;padding:6px 0;border-radius:7px;
+    border:1px solid var(--line);background:transparent;color:var(--gray);cursor:pointer;
+  }
+  .move-btn:hover:not(:disabled){border-color:var(--lime);color:var(--lime);}
+  .move-btn:disabled{opacity:0.25;cursor:default;}
+  .clip-icon{font-size:11px;}
+
+  /* ---------- time badge ---------- */
+  .time-badge{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;padding:2px 7px;border-radius:5px;white-space:nowrap;flex-shrink:0;}
+  .time-badge.overdue{background:rgba(255,64,64,0.18);color:#FF8080;}
+  .time-badge.today{background:rgba(255,184,0,0.18);color:#FFD060;}
+  .time-badge.soon{background:rgba(255,220,0,0.14);color:#F0C040;}
+  .time-badge.ok{background:rgba(200,255,0,0.12);color:var(--lime);}
+
+  /* ---------- fechas section ---------- */
+  .fechas-section{
+    margin-bottom:20px;background:rgba(255,64,64,0.05);
+    border:1px solid rgba(255,64,64,0.18);border-radius:16px;padding:14px 16px;
+  }
+  .fechas-head{display:flex;align-items:center;margin-bottom:12px;}
+  .fechas-title{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-style:italic;font-size:13px;text-transform:uppercase;letter-spacing:0.8px;color:var(--red);display:flex;align-items:center;gap:7px;}
+  .fechas-strip{display:flex;gap:10px;overflow-x:auto;padding-bottom:2px;}
+  .fecha-item{
+    flex-shrink:0;background:var(--surface);border:1px solid rgba(255,64,64,0.2);
+    border-left:3px solid var(--red);border-radius:10px;padding:10px 12px;
+    display:flex;align-items:center;gap:10px;cursor:pointer;
+    transition:border-color .12s ease;min-width:190px;max-width:260px;
+  }
+  .fecha-item:hover{border-color:var(--red);}
+  .fecha-badge{font-family:'JetBrains Mono',monospace;font-size:11px;font-weight:500;color:var(--red);background:rgba(255,64,64,0.1);border-radius:7px;padding:4px 7px;white-space:nowrap;flex-shrink:0;}
+  .fecha-name{font-size:13px;font-weight:600;color:var(--white);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+  .fecha-del{background:none;border:none;color:rgba(255,64,64,0.35);cursor:pointer;font-size:15px;line-height:1;padding:2px;flex-shrink:0;}
+  .fecha-del:hover{color:var(--red);}
+
+  /* ---------- calendar ---------- */
+  .cal-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+  .cal-nav{display:flex;align-items:center;gap:14px;}
+  .cal-nav button{width:32px;height:32px;border-radius:8px;border:1px solid var(--line);background:var(--surface);cursor:pointer;font-size:15px;color:var(--white);}
+  .cal-nav button:hover{border-color:var(--lime);color:var(--lime);}
+  .cal-month{font-family:'Barlow Condensed',sans-serif;font-weight:800;font-style:italic;font-size:19px;min-width:180px;text-align:center;text-transform:capitalize;color:var(--white);}
+  .cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;}
+  .cal-dow{font-family:'JetBrains Mono',monospace;font-size:10.5px;color:var(--gray-dark);text-align:center;padding-bottom:6px;text-transform:uppercase;}
+  .cal-day{min-height:86px;border-radius:10px;border:1px solid var(--line);background:var(--surface);padding:6px;display:flex;flex-direction:column;gap:4px;}
+  .cal-day.empty{background:transparent;border-color:transparent;}
+  .cal-daynum{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gray);}
+  .cal-day.today .cal-daynum{color:var(--black);background:var(--lime);width:20px;height:20px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+  .cal-chips{display:flex;flex-wrap:wrap;gap:4px;}
+  .cal-chip{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;padding:2px 6px;border-radius:6px;cursor:pointer;}
+
+  @media(max-width:760px){
+    .columns{grid-template-columns:1fr;}
+    .topbar{flex-direction:column;align-items:flex-start;}
+    .welcome-card{padding:36px 24px;}
+    .form-card{padding:28px 22px;}
+    .type-grid{grid-template-columns:1fr;}
+    .search-wrap{max-width:100%;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="brand">
+      <div class="brand-mark">mc</div>
+      <div>
+        <div class="brand-name">Mundo de <span>Campeones</span></div>
+        <div class="brand-sub">Gestor de tareas</div>
+      </div>
+    </div>
+    <div id="boardNavWrap" style="display:none;align-items:center;gap:14px;flex-wrap:wrap;">
+      <div class="nav-tabs">
+        <button class="nav-tab active" id="tabKanban" onclick="setBoardView('kanban')">Tablero</button>
+        <button class="nav-tab" id="tabCalendar" onclick="setBoardView('calendar')">Calendario</button>
+      </div>
+      <button class="btn-new" onclick="goForm()"><i>+</i> Nueva tarea</button>
+    </div>
+  </div>
+
+  <!-- WELCOME -->
+  <div class="screen active" id="screen-welcome">
+    <div class="welcome-card">
+      <div class="welcome-eyebrow">MC · Mundo de Campeones</div>
+      <h1 class="welcome-title">Gestión de <span>tareas</span></h1>
+      <p class="welcome-desc">Comunicaciones, desarrollo web y mantenimiento — todo en un solo lugar.</p>
+      <div class="ask-box">
+        <p class="ask-question">¿Quieres registrar algo nuevo?</p>
+        <div class="ask-actions">
+          <button class="ask-btn yes" onclick="goForm()">Sí, registrar</button>
+          <button class="ask-btn no" onclick="goBoard(true)">No, ver tablero</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FORM -->
+  <div class="screen" id="screen-form">
+    <div class="form-card">
+      <h2 class="form-title" id="formTitle">Nueva tarea</h2>
+      <p class="form-sub" id="formSub">Registra el pendiente con su fecha y tipo.</p>
+
+      <div class="field">
+        <label for="taskName">Nombre de la tarea</label>
+        <input type="text" id="taskName" placeholder="Ej. Publicar historia del lunes">
+        <div class="err" id="errName">Escribe el nombre de la tarea.</div>
+      </div>
+
+      <div class="field">
+        <label for="taskDesc">Descripción (opcional)</label>
+        <textarea id="taskDesc" placeholder="Detalles, notas o contexto"></textarea>
+      </div>
+
+      <div class="field">
+        <label for="taskDate">Fecha límite</label>
+        <input type="date" id="taskDate">
+        <div class="err" id="errDate">Selecciona una fecha.</div>
+      </div>
+
+      <div class="field">
+        <label>Tipo de tarea</label>
+        <div class="type-grid" id="typeGrid"></div>
+        <div class="err" id="errType">Elige un tipo de tarea.</div>
+      </div>
+
+      <div class="field">
+        <label>Archivo adjunto (opcional)</label>
+        <div class="file-drop" id="fileDrop" onclick="document.getElementById('taskFile').click()">
+          <span class="file-drop-text">Haz clic para subir archivo (máx. 2 MB)</span>
+        </div>
+        <input type="file" id="taskFile" style="display:none;" onchange="onFileChosen(event)">
+        <div id="fileChipWrap"></div>
+        <div class="err" id="errFile">El archivo pesa más de 2 MB.</div>
+      </div>
+
+      <div class="form-actions">
+        <button class="btn-ghost" onclick="goBoard()">Cancelar</button>
+        <button class="btn-danger-ghost" id="deleteFromForm" style="display:none;" onclick="deleteFromForm()">Eliminar</button>
+        <button class="btn-primary" onclick="submitTask()">Guardar tarea</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- BOARD -->
+  <div class="screen" id="screen-board">
+    <div class="board-sub">
+      <div class="legend" id="legend"></div>
+      <div class="search-wrap">
+        <span class="search-icon">⌕</span>
+        <input class="search-input" type="text" id="searchInput" placeholder="Buscar tarea o fecha…" oninput="onSearch(this.value)">
+      </div>
+    </div>
+
+    <div id="fechas-section" style="display:none;">
+      <div class="fechas-head">
+        <div class="fechas-title"><span style="font-size:8px">●</span> Fechas importantes</div>
+      </div>
+      <div class="fechas-strip" id="fechas-strip"></div>
+    </div>
+
+    <div id="view-kanban">
+      <div class="columns" id="columns"></div>
+    </div>
+
+    <div id="view-calendar" style="display:none;">
+      <div class="cal-head">
+        <div class="cal-month mono" id="calMonthLabel"></div>
+        <div class="cal-nav">
+          <button onclick="calShift(-1)">‹</button>
+          <button onclick="calShift(1)">›</button>
+        </div>
+      </div>
+      <div class="cal-grid" id="calGrid"></div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+const TYPES = {
+  comunicacion: { label:'Comunicaciones',   color:'#A8D800', bg:'rgba(200,255,0,0.12)',    dot:'#C8FF00' },
+  contenido:    { label:'Contenido Digital', color:'#00C4F0', bg:'rgba(0,196,240,0.1)',     dot:'#00C4F0' },
+  web:          { label:'Desarrollo Web',    color:'#FF9500', bg:'rgba(255,149,0,0.1)',     dot:'#FF9500' },
+  mantenimiento:{ label:'Mantenimiento',     color:'#B06EFF', bg:'rgba(176,110,255,0.1)',   dot:'#B06EFF' },
+  evento:       { label:'Fecha importante',  color:'#FF5050', bg:'rgba(255,80,80,0.1)',     dot:'#FF4040' },
+  reunion:      { label:'Reunión',           color:'#AAAAAA', bg:'rgba(170,170,170,0.08)',  dot:'#AAAAAA' },
+};
+const STATUSES = ['recibido','proceso','finalizada'];
+const STATUS_LABEL = { recibido:'Recibido', proceso:'En proceso', finalizada:'Finalizada' };
+const API_URL = '/.netlify/functions/tasks';
+const MAX_FILE_BYTES = 2 * 1024 * 1024;
+const MONTHS = ['enero','febrero','marzo','abril','mayo','junio','julio','agosto','septiembre','octubre','noviembre','diciembre'];
+const DOW = ['lun','mar','mié','jue','vie','sáb','dom'];
+
+let tasks = [];
+let tasksLoaded = false;
+let selectedType = null;
+let pendingFile = null;
+let editingId = null;
+let boardView = 'kanban';
+let searchTerm = '';
+let calCursor = new Date();
+calCursor.setDate(1);
+
+/* ---- API ---- */
+async function loadTasks(){
+  try{
+    const res = await fetch(API_URL);
+    if(!res.ok) throw new Error();
+    tasks = await res.json();
+  }catch(e){}
+}
+async function persistTasks(){
+  try{
+    const res = await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(tasks)});
+    if(!res.ok) throw new Error();
+    return true;
+  }catch(e){
+    alert('No se pudo guardar. Revisa tu conexión.');
+    return false;
+  }
+}
+
+/* ---- navigation ---- */
+function showScreen(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  document.getElementById('boardNavWrap').style.display = (id==='screen-board') ? 'flex' : 'none';
+  if(id !== 'screen-board'){ const si=document.getElementById('searchInput'); if(si) si.value=''; searchTerm=''; }
+}
+async function goBoard(forceReload=false){
+  if(forceReload || !tasksLoaded){ await loadTasks(); tasksLoaded=true; }
+  renderLegend(); renderBoard();
+  if(boardView==='calendar') renderCalendar();
+  showScreen('screen-board');
+}
+function goForm(prefill){
+  editingId = prefill ? prefill.id : null;
+  document.getElementById('taskName').value = prefill ? prefill.name : '';
+  document.getElementById('taskDesc').value = prefill ? (prefill.description||'') : '';
+  document.getElementById('taskDate').value = prefill ? prefill.date : '';
+  selectedType = prefill ? prefill.type : null;
+  pendingFile = prefill && prefill.file ? prefill.file : null;
+  document.querySelectorAll('.err').forEach(e=>e.style.display='none');
+  document.getElementById('formTitle').textContent = prefill ? 'Editar tarea' : 'Nueva tarea';
+  document.getElementById('formSub').textContent = prefill ? 'Actualiza los datos.' : 'Registra el pendiente con su fecha y tipo.';
+  document.getElementById('deleteFromForm').style.display = prefill ? 'inline-block' : 'none';
+  renderTypeGrid(); renderFileChip();
+  showScreen('screen-form');
+}
+
+/* ---- form ---- */
+function renderTypeGrid(){
+  const grid = document.getElementById('typeGrid');
+  grid.innerHTML = '';
+  Object.entries(TYPES).forEach(([key,t])=>{
+    const chip = document.createElement('div');
+    chip.className = 'type-chip' + (selectedType===key ? ' selected' : '');
+    chip.style.setProperty('--chip-color', t.dot);
+    chip.style.setProperty('--chip-bg', t.bg);
+    chip.innerHTML = `<span class="dot" style="background:${t.dot}"></span><span>${t.label}</span>`;
+    chip.onclick = ()=>{ selectedType=key; renderTypeGrid(); };
+    grid.appendChild(chip);
+  });
+}
+function onFileChosen(event){
+  const f = event.target.files[0];
+  document.getElementById('errFile').style.display='none';
+  if(!f) return;
+  if(f.size > MAX_FILE_BYTES){ document.getElementById('errFile').style.display='block'; event.target.value=''; return; }
+  const reader = new FileReader();
+  reader.onload = ()=>{ pendingFile={name:f.name,dataUrl:reader.result}; renderFileChip(); event.target.value=''; };
+  reader.readAsDataURL(f);
+}
+function removeFile(){ pendingFile=null; renderFileChip(); }
+function renderFileChip(){
+  const wrap = document.getElementById('fileChipWrap');
+  if(!pendingFile){ wrap.innerHTML=''; return; }
+  wrap.innerHTML = `<div class="file-chip"><span class="file-chip-name">📎 ${escapeHtml(pendingFile.name)}</span><button type="button" onclick="removeFile()">Quitar</button></div>`;
+}
+async function submitTask(){
+  const name = document.getElementById('taskName').value.trim();
+  const date = document.getElementById('taskDate').value;
+  const description = document.getElementById('taskDesc').value.trim();
+  let ok = true;
+  document.getElementById('errName').style.display='none';
+  document.getElementById('errDate').style.display='none';
+  document.getElementById('errType').style.display='none';
+  if(!name){ document.getElementById('errName').style.display='block'; ok=false; }
+  if(!date){ document.getElementById('errDate').style.display='block'; ok=false; }
+  if(!selectedType){ document.getElementById('errType').style.display='block'; ok=false; }
+  if(!ok) return;
+  if(editingId){
+    const task = tasks.find(t=>t.id===editingId);
+    task.name=name; task.description=description; task.date=date; task.type=selectedType; task.file=pendingFile;
+  } else {
+    tasks.push({id:'t'+Date.now(),name,description,date,type:selectedType,status:'recibido',file:pendingFile});
+  }
+  if(await persistTasks()) goBoard();
+}
+async function deleteFromForm(){
+  if(!editingId) return;
+  if(!confirm('¿Eliminar esta tarea?')) return;
+  tasks = tasks.filter(t=>t.id!==editingId);
+  await persistTasks(); goBoard();
+}
+
+/* ---- board ---- */
+function matchesSearch(task){ return !searchTerm || task.name.toLowerCase().includes(searchTerm); }
+function onSearch(val){ searchTerm=val.trim().toLowerCase(); renderBoard(); if(boardView==='calendar') renderCalendar(); }
+
+function renderLegend(){
+  document.getElementById('legend').innerHTML = Object.entries(TYPES)
+    .filter(([k])=>k!=='evento')
+    .map(([,t])=>`<div class="legend-item"><span class="legend-dot" style="background:${t.dot}"></span>${t.label}</div>`)
+    .join('');
+}
+
+function renderFechas(eventoTasks){
+  const section = document.getElementById('fechas-section');
+  if(eventoTasks.length===0){ section.style.display='none'; return; }
+  section.style.display='block';
+  const strip = document.getElementById('fechas-strip');
+  strip.innerHTML='';
+  eventoTasks.forEach(task=>{
+    const dateFmt = task.date ? formatDate(task.date) : 'Sin fecha';
+    const item = document.createElement('div');
+    item.className='fecha-item';
+    item.innerHTML=`<span class="fecha-badge">${dateFmt}</span><span class="fecha-name">${escapeHtml(task.name)}</span><button class="fecha-del" title="Eliminar">×</button>`;
+    item.querySelector('.fecha-del').addEventListener('click',e=>{ e.stopPropagation(); deleteTask(task.id); });
+    item.addEventListener('click',()=>{ const live=tasks.find(t=>t.id===task.id); if(live) goForm(live); });
+    strip.appendChild(item);
+  });
+}
+
+function renderBoard(){
+  const sorted = [...tasks].sort((a,b)=>(a.date||'').localeCompare(b.date||''));
+  const eventoTasks = sorted.filter(t=>t.type==='evento' && matchesSearch(t));
+  const regularTasks = sorted.filter(t=>t.type!=='evento' && matchesSearch(t));
+  renderFechas(eventoTasks);
+  const columns = document.getElementById('columns');
+  columns.innerHTML='';
+  STATUSES.forEach(status=>{
+    const col = document.createElement('div');
+    col.className='column';
+    const list = regularTasks.filter(t=>t.status===status);
+    col.innerHTML=`<div class="column-head"><span class="column-title">${STATUS_LABEL[status]}</span><span class="column-count mono">${list.length}</span></div><div class="cards" id="cards-${status}"></div>`;
+    columns.appendChild(col);
+    const wrap = col.querySelector('.cards');
+    if(list.length===0){ wrap.innerHTML=`<div class="empty-col">Sin tareas aquí</div>`; }
+    else { list.forEach(task=>wrap.appendChild(renderCard(task,status))); }
+  });
+}
+
+function renderCard(task, status){
+  const t = TYPES[task.type];
+  const idx = STATUSES.indexOf(status);
+  const ts = getTimeStatus(task.date, task.status);
+  const card = document.createElement('div');
+  card.className=`task-card ${ts?'t-'+ts.type:''}`;
+  card.style.setProperty('--chip-color',t.dot);
+  card.style.setProperty('--chip-bg',t.bg);
+  const dateFmt = task.date ? formatDate(task.date) : 'Sin fecha';
+  const badgeHtml = ts&&ts.label ? `<span class="time-badge ${ts.type}">${ts.label}</span>` : '';
+  card.innerHTML=`
+    <div class="task-top">
+      <div class="task-name">${escapeHtml(task.name)}</div>
+      <button class="task-del" data-role="del">×</button>
+    </div>
+    ${task.description ? `<p class="task-desc">${escapeHtml(task.description)}</p>` : ''}
+    <div class="task-meta">
+      <span class="task-type-pill">${t.label}</span>
+      <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;">
+        <span class="task-date mono">${task.file?'<span class="clip-icon">📎</span>':''}${dateFmt}</span>
+        ${badgeHtml}
+      </div>
+    </div>
+    <div class="task-move">
+      <button class="move-btn" data-role="prev" ${idx===0?'disabled':''}>‹ mover</button>
+      <button class="move-btn" data-role="next" ${idx===STATUSES.length-1?'disabled':''}>mover ›</button>
+    </div>
+  `;
+  card.addEventListener('click',(e)=>{
+    const role=e.target.getAttribute('data-role');
+    if(role==='del'){ e.stopPropagation(); deleteTask(task.id); return; }
+    if(role==='prev'){ e.stopPropagation(); moveTask(task.id,-1); return; }
+    if(role==='next'){ e.stopPropagation(); moveTask(task.id,1); return; }
+    goForm(task);
+  });
+  return card;
+}
+
+async function moveTask(id,dir){
+  const task=tasks.find(t=>t.id===id); if(!task) return;
+  const idx=STATUSES.indexOf(task.status);
+  const ni=idx+dir;
+  if(ni<0||ni>=STATUSES.length) return;
+  task.status=STATUSES[ni];
+  await persistTasks(); renderBoard(); if(boardView==='calendar') renderCalendar();
+}
+async function deleteTask(id){
+  if(!confirm('¿Eliminar esta tarea?')) return;
+  tasks=tasks.filter(t=>t.id!==id);
+  await persistTasks(); renderBoard(); if(boardView==='calendar') renderCalendar();
+}
+
+/* ---- time status ---- */
+function getTimeStatus(dateStr, taskStatus){
+  if(taskStatus==='finalizada') return {type:'done',label:''};
+  if(!dateStr) return null;
+  const today=new Date(); today.setHours(0,0,0,0);
+  const due=new Date(dateStr+'T00:00:00');
+  const diff=Math.round((due-today)/86400000);
+  if(diff<0){ const d=Math.abs(diff); return {type:'overdue',label:d===1?'1 día de retraso':`${d} días de retraso`}; }
+  if(diff===0) return {type:'today',label:'Vence hoy'};
+  if(diff<=3) return {type:'soon',label:diff===1?'Vence mañana':`${diff} días restantes`};
+  return {type:'ok',label:`${diff} días restantes`};
+}
+
+/* ---- board view ---- */
+function setBoardView(view){
+  boardView=view;
+  document.getElementById('tabKanban').classList.toggle('active',view==='kanban');
+  document.getElementById('tabCalendar').classList.toggle('active',view==='calendar');
+  document.getElementById('view-kanban').style.display=view==='kanban'?'block':'none';
+  document.getElementById('view-calendar').style.display=view==='calendar'?'block':'none';
+  if(view==='calendar') renderCalendar();
+}
+
+/* ---- calendar ---- */
+function calShift(dir){ calCursor.setMonth(calCursor.getMonth()+dir); renderCalendar(); }
+function renderCalendar(){
+  document.getElementById('calMonthLabel').textContent=`${MONTHS[calCursor.getMonth()]} ${calCursor.getFullYear()}`;
+  const grid=document.getElementById('calGrid');
+  grid.innerHTML='';
+  DOW.forEach(d=>{ const el=document.createElement('div'); el.className='cal-dow'; el.textContent=d; grid.appendChild(el); });
+  const year=calCursor.getFullYear(), month=calCursor.getMonth();
+  const firstDay=new Date(year,month,1);
+  let startOffset=firstDay.getDay()-1; if(startOffset<0) startOffset=6;
+  const daysInMonth=new Date(year,month+1,0).getDate();
+  const todayIso=new Date().toISOString().slice(0,10);
+  for(let i=0;i<startOffset;i++){ const el=document.createElement('div'); el.className='cal-day empty'; grid.appendChild(el); }
+  for(let day=1;day<=daysInMonth;day++){
+    const iso=`${year}-${String(month+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    const el=document.createElement('div');
+    el.className='cal-day'+(iso===todayIso?' today':'');
+    const dayTasks=tasks.filter(t=>t.date===iso && matchesSearch(t));
+    const chips=dayTasks.map((t,i)=>{
+      const type=TYPES[t.type];
+      return `<span class="cal-chip" data-id="${t.id}" style="background:${type.bg};color:${type.dot}" title="${escapeHtml(t.name)}">T${i+1}</span>`;
+    }).join('');
+    el.innerHTML=`<div class="cal-daynum">${day}</div><div class="cal-chips">${chips}</div>`;
+    el.querySelectorAll('.cal-chip').forEach(chip=>{
+      chip.addEventListener('click',()=>{ const task=tasks.find(t=>t.id===chip.getAttribute('data-id')); if(task) goForm(task); });
+    });
+    grid.appendChild(el);
+  }
+}
+
+/* ---- utils ---- */
+function formatDate(iso){ const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`; }
+function escapeHtml(str){ const div=document.createElement('div'); div.textContent=str; return div.innerHTML; }
+
+window.limpiarTareas = async function(){
+  await loadTasks();
+  tasks=tasks.filter(t=>t.type==='evento');
+  const ok=await persistTasks();
+  if(ok){ tasksLoaded=false; await goBoard(true); console.log('Tareas borradas. Solo quedan fechas importantes.'); }
+};
+</script>
+</body>
+</html>
